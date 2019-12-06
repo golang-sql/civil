@@ -22,6 +22,8 @@
 package civil
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -43,9 +45,11 @@ func DateOf(t time.Time) Date {
 	return d
 }
 
+const rfc3339Date = "2006-01-02"
+
 // ParseDate parses a string in RFC3339 full-date format and returns the date value it represents.
 func ParseDate(s string) (Date, error) {
-	t, err := time.Parse("2006-01-02", s)
+	t, err := time.Parse(rfc3339Date, s)
 	if err != nil {
 		return Date{}, err
 	}
@@ -133,6 +137,65 @@ func (d *Date) UnmarshalText(data []byte) error {
 	return err
 }
 
+// UnmarshalJSON implements encoding/json Unmarshaler interface
+func (d *Date) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("date should be a string, got %s", data)
+	}
+	val, err := ParseDate(s)
+	if err != nil {
+		return fmt.Errorf("invalid date: %v", err)
+	}
+	*d = val
+	return nil
+}
+
+// MarshalJSON implements encoding/json Marshaler interface
+func (d *Date) MarshalJSON() ([]byte, error) {
+	if y := d.Year; y < 0 || y >= 10000 {
+		// RFC 3339 is clear that years are 4 digits exactly.
+		// See golang.org/issue/4556#c15 for more discussion.
+		return nil, fmt.Errorf("Date.MarshalJSON: year '%v' outside of range [0,9999]", y)
+	}
+
+	b := make([]byte, 0, len(rfc3339Date)+2)
+	b = append(b, '"')
+	b = append(b, d.String()...)
+	b = append(b, '"')
+	return b, nil
+}
+
+// Value implements the database/sql/driver valuer interface.
+func (d Date) Value() (driver.Value, error) {
+	return d.String(), nil
+}
+
+// Scan implements the database/sql scanner interface.
+func (d *Date) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	str, ok := value.(string)
+	if !ok {
+		bytes, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("'%s' could not be converted into a valid string", str)
+		}
+
+		str = string(bytes[:])
+	}
+
+	val, err := ParseDate(str)
+	if err != nil {
+		return err
+	}
+
+	*d = val
+	return nil
+}
+
 // A Time represents a time with nanosecond precision.
 //
 // This type does not include location information, and therefore does not
@@ -156,13 +219,15 @@ func TimeOf(t time.Time) Time {
 	return tm
 }
 
+const rfc3339Time = "15:04:05.999999999"
+
 // ParseTime parses a string and returns the time value it represents.
 // ParseTime accepts an extended form of the RFC3339 partial-time format. After
 // the HH:MM:SS part of the string, an optional fractional part may appear,
 // consisting of a decimal point followed by one to nine decimal digits.
 // (RFC3339 admits only one digit after the decimal point).
 func ParseTime(s string) (Time, error) {
-	t, err := time.Parse("15:04:05.999999999", s)
+	t, err := time.Parse(rfc3339Time, s)
 	if err != nil {
 		return Time{}, err
 	}
@@ -201,6 +266,59 @@ func (t *Time) UnmarshalText(data []byte) error {
 	return err
 }
 
+// UnmarshalJSON implements encoding/json Unmarshaler interface
+func (t *Time) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("time should be a string, got %s", data)
+	}
+	val, err := ParseTime(s)
+	if err != nil {
+		return fmt.Errorf("invalid time: %v", err)
+	}
+	*t = val
+	return nil
+}
+
+// MarshalJSON implements encoding/json Marshaler interface
+func (t *Time) MarshalJSON() ([]byte, error) {
+	b := make([]byte, 0, len(rfc3339Time)+2)
+	b = append(b, '"')
+	b = append(b, t.String()...)
+	b = append(b, '"')
+	return b, nil
+}
+
+// Value implements the database/sql/driver valuer interface.
+func (t Time) Value() (driver.Value, error) {
+	return t.String(), nil
+}
+
+// Scan implements the database/sql scanner interface.
+func (t *Time) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	str, ok := value.(string)
+	if !ok {
+		bytes, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("'%s' could not be converted into a valid string", str)
+		}
+
+		str = string(bytes[:])
+	}
+
+	val, err := ParseTime(str)
+	if err != nil {
+		return err
+	}
+
+	*t = val
+	return nil
+}
+
 // A DateTime represents a date and time.
 //
 // This type does not include location information, and therefore does not
@@ -220,6 +338,8 @@ func DateTimeOf(t time.Time) DateTime {
 	}
 }
 
+const rfc3339DateTime = "2006-01-02T15:04:05.999999999"
+
 // ParseDateTime parses a string and returns the DateTime it represents.
 // ParseDateTime accepts a variant of the RFC3339 date-time format that omits
 // the time offset but includes an optional fractional time, as described in
@@ -227,7 +347,7 @@ func DateTimeOf(t time.Time) DateTime {
 //     YYYY-MM-DDTHH:MM:SS[.FFFFFFFFF]
 // where the 'T' may be a lower-case 't'.
 func ParseDateTime(s string) (DateTime, error) {
-	t, err := time.Parse("2006-01-02T15:04:05.999999999", s)
+	t, err := time.Parse(rfc3339DateTime, s)
 	if err != nil {
 		t, err = time.Parse("2006-01-02t15:04:05.999999999", s)
 		if err != nil {
@@ -286,4 +406,57 @@ func (dt *DateTime) UnmarshalText(data []byte) error {
 	var err error
 	*dt, err = ParseDateTime(string(data))
 	return err
+}
+
+// UnmarshalJSON implements encoding/json Unmarshaler interface
+func (dt *DateTime) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("datetime should be a string, got %s", data)
+	}
+	val, err := ParseDateTime(s)
+	if err != nil {
+		return fmt.Errorf("invalid datetime: %v", err)
+	}
+	*dt = val
+	return nil
+}
+
+// MarshalJSON implements encoding/json Marshaler interface
+func (dt *DateTime) MarshalJSON() ([]byte, error) {
+	b := make([]byte, 0, len(rfc3339DateTime)+2)
+	b = append(b, '"')
+	b = append(b, dt.String()...)
+	b = append(b, '"')
+	return b, nil
+}
+
+// Value implements the database/sql/driver valuer interface.
+func (dt DateTime) Value() (driver.Value, error) {
+	return dt.String(), nil
+}
+
+// Scan implements the database/sql scanner interface.
+func (dt *DateTime) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+
+	str, ok := value.(string)
+	if !ok {
+		bytes, ok := value.([]byte)
+		if !ok {
+			return fmt.Errorf("'%s' could not be converted into a valid string", str)
+		}
+
+		str = string(bytes[:])
+	}
+
+	val, err := ParseDateTime(str)
+	if err != nil {
+		return err
+	}
+
+	*dt = val
+	return nil
 }
