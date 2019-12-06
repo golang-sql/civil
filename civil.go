@@ -45,11 +45,12 @@ func DateOf(t time.Time) Date {
 	return d
 }
 
-const rfc3339Date = "2006-01-02"
+// RFC3339Date is the civil date format of RFC3339
+const RFC3339Date = "2006-01-02"
 
 // ParseDate parses a string in RFC3339 full-date format and returns the date value it represents.
 func ParseDate(s string) (Date, error) {
-	t, err := time.Parse(rfc3339Date, s)
+	t, err := time.Parse(RFC3339Date, s)
 	if err != nil {
 		return Date{}, err
 	}
@@ -159,7 +160,7 @@ func (d *Date) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("Date.MarshalJSON: year '%v' outside of range [0,9999]", y)
 	}
 
-	b := make([]byte, 0, len(rfc3339Date)+2)
+	b := make([]byte, 0, len(RFC3339Date)+2)
 	b = append(b, '"')
 	b = append(b, d.String()...)
 	b = append(b, '"')
@@ -219,7 +220,8 @@ func TimeOf(t time.Time) Time {
 	return tm
 }
 
-const rfc3339Time = "15:04:05.999999999"
+// RFC3339Time is the civil time format of RFC3339
+const RFC3339Time = "15:04:05.999999999"
 
 // ParseTime parses a string and returns the time value it represents.
 // ParseTime accepts an extended form of the RFC3339 partial-time format. After
@@ -227,7 +229,7 @@ const rfc3339Time = "15:04:05.999999999"
 // consisting of a decimal point followed by one to nine decimal digits.
 // (RFC3339 admits only one digit after the decimal point).
 func ParseTime(s string) (Time, error) {
-	t, err := time.Parse(rfc3339Time, s)
+	t, err := time.Parse(RFC3339Time, s)
 	if err != nil {
 		return Time{}, err
 	}
@@ -282,7 +284,7 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON implements encoding/json Marshaler interface
 func (t *Time) MarshalJSON() ([]byte, error) {
-	b := make([]byte, 0, len(rfc3339Time)+2)
+	b := make([]byte, 0, len(RFC3339Time)+2)
 	b = append(b, '"')
 	b = append(b, t.String()...)
 	b = append(b, '"')
@@ -338,7 +340,8 @@ func DateTimeOf(t time.Time) DateTime {
 	}
 }
 
-const rfc3339DateTime = "2006-01-02T15:04:05.999999999"
+// RFC3339Time is the civil datetime format of RFC3339
+const RFC3339DateTime = "2006-01-02T15:04:05.999999999"
 
 // ParseDateTime parses a string and returns the DateTime it represents.
 // ParseDateTime accepts a variant of the RFC3339 date-time format that omits
@@ -347,7 +350,7 @@ const rfc3339DateTime = "2006-01-02T15:04:05.999999999"
 //     YYYY-MM-DDTHH:MM:SS[.FFFFFFFFF]
 // where the 'T' may be a lower-case 't'.
 func ParseDateTime(s string) (DateTime, error) {
-	t, err := time.Parse(rfc3339DateTime, s)
+	t, err := time.Parse(RFC3339DateTime, s)
 	if err != nil {
 		t, err = time.Parse("2006-01-02t15:04:05.999999999", s)
 		if err != nil {
@@ -369,7 +372,7 @@ func (dt DateTime) IsValid() bool {
 
 // In returns the time corresponding to the DateTime in the given location.
 //
-// If the time is missing or ambigous at the location, In returns the same
+// If the time is missing or ambiguous at the location, In returns the same
 // result as time.Date. For example, if loc is America/Indiana/Vincennes, then
 // both
 //     time.Date(1955, time.May, 1, 0, 30, 0, 0, loc)
@@ -424,7 +427,7 @@ func (dt *DateTime) UnmarshalJSON(data []byte) error {
 
 // MarshalJSON implements encoding/json Marshaler interface
 func (dt *DateTime) MarshalJSON() ([]byte, error) {
-	b := make([]byte, 0, len(rfc3339DateTime)+2)
+	b := make([]byte, 0, len(RFC3339DateTime)+2)
 	b = append(b, '"')
 	b = append(b, dt.String()...)
 	b = append(b, '"')
