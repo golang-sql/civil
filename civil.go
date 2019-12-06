@@ -82,6 +82,18 @@ func (d Date) AddDays(n int) Date {
 	return DateOf(d.In(time.UTC).AddDate(0, 0, n))
 }
 
+// AddMonths returns the date that is n months in the future.
+// n can also be negative to go into the past.
+func (d Date) AddMonths(n int) Date {
+	return DateOf(d.In(time.UTC).AddDate(0, n, 0))
+}
+
+// AddYears returns the date that is n years in the future.
+// n can also be negative to go into the past.
+func (d Date) AddYears(n int) Date {
+	return DateOf(d.In(time.UTC).AddDate(n, 0, 0))
+}
+
 // DaysSince returns the signed number of days between the date and s, not including the end day.
 // This is the inverse operation to AddDays.
 func (d Date) DaysSince(s Date) (days int) {
