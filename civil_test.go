@@ -23,6 +23,7 @@ package civil
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -99,10 +100,18 @@ func TestDate_Value(t *testing.T) {
 	assert.Equal(t, v, "2020-02-29")
 }
 
-func TestDate_Scan(t *testing.T) {
+func TestDate_Scan_String(t *testing.T) {
 	d := &Date{}
 	var v interface{}
 	v = "2020-02-29"
+	d.Scan(v)
+	assert.Equal(t, Date{Year: 2020, Month: 2, Day: 29}, *d)
+}
+
+func TestDate_Scan_Time(t *testing.T) {
+	d := &Date{}
+	var v interface{}
+	v = time.Date(2020, time.February, 29, 0, 0, 0, 0, time.UTC)
 	d.Scan(v)
 	assert.Equal(t, Date{Year: 2020, Month: 2, Day: 29}, *d)
 }
@@ -147,12 +156,20 @@ func TestTime_Value(t *testing.T) {
 	assert.Equal(t, "03:42:31.000000876", v)
 }
 
-func TestTime_Scan(t *testing.T) {
+func TestTime_Scan_String(t *testing.T) {
 	time := &Time{}
 	var v interface{}
 	v = "03:42:31.000000876"
 	time.Scan(v)
 	assert.Equal(t, *time, Time{Hour: 3, Minute: 42, Second: 31, Nanosecond: 876})
+}
+
+func TestTime_Scan_Time(t *testing.T) {
+	tm := &Time{}
+	var v interface{}
+	v = time.Date(2020, time.February, 29, 3, 42, 31, 876, time.UTC)
+	tm.Scan(v)
+	assert.Equal(t, *tm, Time{Hour: 3, Minute: 42, Second: 31, Nanosecond: 876})
 }
 
 func TestDateTime_MarshalJSON(t *testing.T) {
@@ -222,10 +239,31 @@ func TestDateTime_Value(t *testing.T) {
 	assert.Equal(t, "2020-02-29T03:42:31.000000876", v)
 }
 
-func TestDateTime_Scan(t *testing.T) {
+func TestDateTime_ScanString(t *testing.T) {
 	datetime := &DateTime{}
 	var v interface{}
 	v = "2020-02-29T03:42:31.000000876"
+	datetime.Scan(v)
+	expected := DateTime{
+		Date: Date{
+			Year:  2020,
+			Month: 2,
+			Day:   29,
+		},
+		Time: Time{
+			Hour:       3,
+			Minute:     42,
+			Second:     31,
+			Nanosecond: 876,
+		},
+	}
+	assert.Equal(t, *datetime, expected)
+}
+
+func TestDateTime_Scan(t *testing.T) {
+	datetime := &DateTime{}
+	var v interface{}
+	v = time.Date(2020, time.February, 29, 3, 42, 31, 876, time.UTC)
 	datetime.Scan(v)
 	expected := DateTime{
 		Date: Date{

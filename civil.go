@@ -180,20 +180,21 @@ func (d *Date) Scan(value interface{}) error {
 
 	str, ok := value.(string)
 	if !ok {
-		bytes, ok := value.([]byte)
+		t, ok := value.(time.Time)
 		if !ok {
-			return fmt.Errorf("'%s' could not be converted into a valid string", str)
+			return fmt.Errorf("'%s' could not be converted into a valid type", str)
 		}
 
-		str = string(bytes[:])
+		val := DateOf(t)
+		*d = val
+	} else {
+		val, err := ParseDate(str)
+		if err != nil {
+			return err
+		}
+		*d = val
 	}
 
-	val, err := ParseDate(str)
-	if err != nil {
-		return err
-	}
-
-	*d = val
 	return nil
 }
 
@@ -304,20 +305,21 @@ func (t *Time) Scan(value interface{}) error {
 
 	str, ok := value.(string)
 	if !ok {
-		bytes, ok := value.([]byte)
+		tm, ok := value.(time.Time)
 		if !ok {
-			return fmt.Errorf("'%s' could not be converted into a valid string", str)
+			return fmt.Errorf("'%s' could not be converted into a valid type", str)
 		}
 
-		str = string(bytes[:])
+		val := TimeOf(tm)
+		*t = val
+	} else {
+		val, err := ParseTime(str)
+		if err != nil {
+			return err
+		}
+		*t = val
 	}
 
-	val, err := ParseTime(str)
-	if err != nil {
-		return err
-	}
-
-	*t = val
 	return nil
 }
 
@@ -447,19 +449,20 @@ func (dt *DateTime) Scan(value interface{}) error {
 
 	str, ok := value.(string)
 	if !ok {
-		bytes, ok := value.([]byte)
+		t, ok := value.(time.Time)
 		if !ok {
-			return fmt.Errorf("'%s' could not be converted into a valid string", str)
+			return fmt.Errorf("'%s' could not be converted into a valid type", str)
 		}
 
-		str = string(bytes[:])
+		val := DateTimeOf(t)
+		*dt = val
+	} else {
+		val, err := ParseDateTime(str)
+		if err != nil {
+			return err
+		}
+		*dt = val
 	}
 
-	val, err := ParseDateTime(str)
-	if err != nil {
-		return err
-	}
-
-	*dt = val
 	return nil
 }
